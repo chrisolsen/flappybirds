@@ -1,46 +1,31 @@
 package com.c3w.flappybirds.sprites;
 
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 
 import java.util.Random;
 
-public class Tube {
+public class Tube extends Image {
     private static final int FLUCTUATION = 130;
     private static final int TUBE_GAP = 100;
     private static final int LOWEST_OPENING = 120;
 
-    private float posX;
     private Texture topTube, bottomTube;
-    private Vector2 topPosition, bottomPosition;
     private Rectangle topBounds, bottomBounds;
 
-    public Vector2 getTopPosition() {
-        return topPosition;
+    public Rectangle getTopBounds() {
+        return topBounds;
     }
 
-    public Vector2 getBottomPosition() {
-        return bottomPosition;
+    public Rectangle getBottomBounds() {
+        return bottomBounds;
     }
-
-    public Texture getTopTube() {
-        return topTube;
-    }
-
-    public Texture getBottomTube() {
-        return bottomTube;
-    }
-
 
     public Tube(float x) {
-        this.posX = x;
-
         topTube = new Texture("toptube.png");
         bottomTube = new Texture("bottomtube.png");
-
-        topPosition = new Vector2();
-        bottomPosition = new Vector2();
 
         topBounds = new Rectangle(0, 0, topTube.getWidth(), topTube.getHeight());
         bottomBounds = new Rectangle(0,0, bottomTube.getWidth(), bottomTube.getHeight());
@@ -49,24 +34,24 @@ public class Tube {
         setRandomPositionY();
     }
 
-    public void setPositionX(float x) {
-        topPosition.x += x;
-        bottomPosition.x += x;
+    @Override
+    public void draw(Batch batch, float parentAlpha) {
+        batch.draw(topTube, this.topBounds.x, this.topBounds.y);
+        batch.draw(bottomTube, this.bottomBounds.x, this.bottomBounds.y);
+    }
 
-        topBounds.x = topPosition.x;
-        bottomBounds.x = bottomPosition.x;
+    public void setPositionX(float x) {
+        topBounds.x = x;
+        bottomBounds.x = x;
     }
 
     public void setRandomPositionY() {
         Random r = new Random();
-        topPosition.y = r.nextInt(FLUCTUATION) + TUBE_GAP + LOWEST_OPENING;
-        bottomPosition.y = topPosition.y - TUBE_GAP - bottomTube.getHeight();
-
-        topBounds.y = topPosition.y;
-        bottomBounds.y = bottomPosition.y;
+        topBounds.y = r.nextInt(FLUCTUATION) + TUBE_GAP + LOWEST_OPENING;
+        bottomBounds.y = topBounds.y - TUBE_GAP - bottomTube.getHeight();
     }
 
-    public int getWidth() {
+    public float getWidth() {
         return topTube.getWidth();
     }
 
