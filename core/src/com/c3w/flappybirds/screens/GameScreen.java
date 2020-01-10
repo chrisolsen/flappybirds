@@ -14,35 +14,50 @@ import com.c3w.flappybirds.FlappyBirds;
 import com.c3w.flappybirds.sprites.Bird;
 import com.c3w.flappybirds.sprites.Tube;
 
+import static com.c3w.flappybirds.screens.GameScreen.GameState.*;
 
 public class GameScreen implements Screen {
 
     private static final int TUBE_OFFSET = 150;
     private static final int X_VEL = 40;
 
+    enum GameState {
+        PLAYING,
+        OVER
+    }
+
     private Bird bird;
     private Array<Tube> tubes;
     private Image background;
+    private Image[] grounds;
 
     private FlappyBirds game;
     private Stage stage;
 
+    private GameState state;
     private float lastTubeOffset;
 
     public GameScreen(FlappyBirds g) {
         game = g;
+        init();
+    }
+
+    private void init() {
+        state = PLAYING;
         stage = new Stage(new ScreenViewport());
         OrthographicCamera cam = (OrthographicCamera) stage.getCamera();
-        cam.setToOrtho(false, g.WIDTH / 2, g.HEIGHT / 2);
+        cam.setToOrtho(false, game.WIDTH / 2, game.HEIGHT / 2);
 
+        // background
         background = new Image(new Texture("bg.png"));
-        background.setFillParent(true);
         stage.addActor(background);
 
+        // bird
         bird = new Bird(50, 300, X_VEL);
         bird.setPosition(50, 300);
         stage.addActor(bird);
 
+        // tubes
         tubes = new Array<>();
         for (int i = 0; i < 3; i++) {
             Tube t = new Tube(TUBE_OFFSET * (i+1));
@@ -50,19 +65,63 @@ public class GameScreen implements Screen {
             stage.addActor(t);
         }
 
+        // set looping ground
+        Texture groundTexture = new Texture("ground.png");
+
+        grounds = new Image[2];
+        grounds[0] = new Image(groundTexture);
+        grounds[0].setY(-grounds[0].getHeight() + 30);
+        stage.addActor(grounds[0]);
+
+        grounds[1] = new Image(groundTexture);
+        grounds[1].setPosition(grounds[1].getWidth(), -grounds[1].getHeight() + 30);
+        stage.addActor(grounds[1]);
+
         lastTubeOffset = tubes.get(tubes.size - 1).getTopBounds().getX();
     }
 
     public void update(float dt) {
+        // act based on game state
+        if (Gdx.input.justTouched()) {
+            switch (state) {
+                case PLAYING:
+                    bird.jump();
+                    break;
+                case OVER:
+                    // TODO: show restart screen
+                    return;
+                default:
+                    return;
+            }
+        }
+
+        // bird collision with ground
+        if (bird.getY() < 30) {
+            state = OVER;
+            return;
+        }
+
+        // tube collisions
+        for (Tube t: tubes) {
+            if (t.overlaps(bird.getBounds(true))) {
+                state = OVER;
+                return;
+            }
+        }
+
+        // update entity positions
         Camera cam = stage.getCamera();
         cam.translate(X_VEL * dt, 0f, 0f);
-
+        bird.update(dt);
         background.setX(background.getX() + X_VEL * dt);
 
-        if (Gdx.input.justTouched()) {
-           bird.jump();
+        // wrapping ground
+        for (Image g: grounds) {
+            boolean isGroundOffCamera = g.getX() + g.getWidth() < cam.position.x - cam.viewportWidth/2;
+            if (isGroundOffCamera) {
+                g.setX(cam.position.x + cam.viewportWidth / 2);
+            }
         }
-        bird.update(dt);
 
         // wrap the next pipe
         float xBounds = cam.position.x - cam.viewportWidth / 2;
